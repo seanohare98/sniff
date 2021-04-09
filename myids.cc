@@ -44,17 +44,11 @@ void checkHeavyHitter(double pkt_ts, unsigned int src_ip, unsigned int payload, 
     // See if already reported intrusion for this IP
     bool reported = std::find(hh_reports.begin(), hh_reports.end(), src_ip) != hh_reports.end();
     
-    // std::cout << "reported ? : "<< reported << std::endl;
     // Report intrusion if over threshold
     if (hh_map[src_ip] > hh_thresh * 1000000 && !reported) {
         printHeavyHitter(pkt_ts, src_ip);
         hh_reports.push_back(src_ip);
     }
-/*
-    std::map<unsigned int, unsigned long long>::iterator it;
-        for(it = hh_map.begin(); it != hh_map.end(); it++)
-            std::cout << "(src_ip) | " << it->first << " \t(has payload_size) - " << it->second << std::endl; 
-*/
 }
 
 void checkHorizontalScan(double pkt_ts, unsigned int src_ip, unsigned int dst_port, unsigned int dst_ip, unsigned int h_pscan_thresh) {
@@ -66,30 +60,16 @@ void checkHorizontalScan(double pkt_ts, unsigned int src_ip, unsigned int dst_po
     }
     else {
         if (std::find(h_pscan_map[std::make_pair(src_ip, dst_port)].begin(), h_pscan_map[std::make_pair(src_ip, dst_port)].end(), dst_ip) == h_pscan_map[std::make_pair(src_ip, dst_port)].end()) {
-//            std::cout << dst_ip << " is not in vector " << std::endl;
             h_pscan_map[std::make_pair(src_ip, dst_port)].push_back(dst_ip);
         }
         
         bool reported = std::find(h_pscan_reports.begin(), h_pscan_reports.end(), std::make_pair(src_ip, dst_port)) != h_pscan_reports.end();
 
-        // std::cout << "reported ? : "<< reported << std::endl;
         if (h_pscan_map[std::make_pair(src_ip, dst_port)].size() > h_pscan_thresh && !reported) {
             printHorizontalScan(pkt_ts, src_ip, dst_port);
             h_pscan_reports.push_back(std::make_pair(src_ip, dst_port));
         }  
     }
-/*
-    std::map<std::pair<unsigned int, unsigned int>, std::vector<unsigned int> >::iterator it;
-    for(it = h_pscan_map.begin(); it != h_pscan_map.end(); it++) {
-        std::cout << "(src_ip, dst_port) "; print_ip(it->first.first); std::cout << ":" << it->first.second << " \t(has ip_list) - ";
-        for(std::vector<unsigned int>::iterator i = it->second.begin(); i!= it->second.end(); ++i) {
-                //std::cout << *i << ' ';
-                print_ip(*i);
-                std::cout << ' ';
-        }
-        std::cout << std::endl;
-    }
-*/
 }
 
 void checkVerticalScan(double pkt_ts, unsigned int src_ip, unsigned int dst_ip, unsigned int dst_port, unsigned int v_pscan_thresh) {
@@ -104,22 +84,12 @@ void checkVerticalScan(double pkt_ts, unsigned int src_ip, unsigned int dst_ip, 
         }
         
         bool reported = std::find(v_pscan_reports.begin(), v_pscan_reports.end(), std::make_pair(src_ip, dst_ip)) != v_pscan_reports.end();
-        // std::cout << "reported ? : "<< reported << std::endl;
 
         if (v_pscan_map[std::make_pair(src_ip, dst_ip)].size() > v_pscan_thresh && !reported) {
             printVerticalScan(pkt_ts, src_ip, dst_ip);
             v_pscan_reports.push_back(std::make_pair(src_ip, dst_ip));
         }  
     }
-/*  
-    std::map<std::pair<unsigned int, unsigned int>, std::vector<unsigned int> >::iterator it;
-    for(it = v_pscan_map.begin(); it != v_pscan_map.end(); it++) {
-        std::cout << "(src_ip, dst_ip) "; print_ip( it->first.first); std::cout << ":";  print_ip( it->first.second ); std::cout<< " \t(has port_list) -  ";
-        for(std::vector<unsigned int>::iterator i = it->second.begin(); i!= it->second.end(); ++i)
-                std::cout << *i << ' ';
-        std::cout << std::endl;
-    }
-*/
 }
 
 void printHeavyHitter(double pkt_ts, unsigned int src_ip) {
@@ -156,7 +126,6 @@ void printAggregateTraffic(unsigned int tot_packets, unsigned int tot_ip_packets
     printf("Total number of ICMP packets: %u\n", tot_icmp_packets);
 }
 
-// From Lecture 3-1 (checksum valid if return = 0)
 unsigned short in_cksum(unsigned short *addr, int len) { 
 	int nleft = len;
     unsigned short *w = addr;
@@ -231,8 +200,6 @@ void sniff(char* mode, char* arg, unsigned int hh_thresh, unsigned int h_pscan_t
                 epoch_start = pkt_ts;
             } 
 
-    //         std::cout << "Time since epoch_start: " << pkt_ts - epoch_start << std::endl;
-
             // Reached new epoch
             if (pkt_ts - epoch_start >= epoch_length) {
                 // Log aggregate traffic 
@@ -304,16 +271,7 @@ void sniff(char* mode, char* arg, unsigned int hh_thresh, unsigned int h_pscan_t
 				        checkHorizontalScan(pkt_ts, src_ip, dst_port, dst_ip, h_pscan_thresh);
                         checkVerticalScan(pkt_ts, src_ip, dst_ip, dst_port, v_pscan_thresh);
                         fflush(stdout);
-/*
-                        printf("%lf: %d.%d.%d.%d:%d -> %d.%d.%d.%d:%d\n",
-                           pkt_ts,
-                           src_ip & 0xff, (src_ip >> 8) & 0xff,
-                           (src_ip >> 16) & 0xff, (src_ip >> 24) & 0xff,
-                           src_port,
-                           dst_ip & 0xff, (dst_ip >> 8) & 0xff,
-                           (dst_ip >> 16) & 0xff, (dst_ip >> 24) & 0xff,
-                           dst_port);
-*/
+
                         // Increment counter (total tcp packets)
                         tot_tcp_packets++;
                         break;
@@ -327,23 +285,13 @@ void sniff(char* mode, char* arg, unsigned int hh_thresh, unsigned int h_pscan_t
                         checkHorizontalScan(pkt_ts, src_ip, dst_port, dst_ip, h_pscan_thresh);
                         checkVerticalScan(pkt_ts, src_ip, dst_ip, dst_port, v_pscan_thresh);
                         fflush(stdout);
-/*
-                        printf("%lf: %d.%d.%d.%d:%d -> %d.%d.%d.%d:%d\n",
-                           pkt_ts,
-                           src_ip & 0xff, (src_ip >> 8) & 0xff,
-                           (src_ip >> 16) & 0xff, (src_ip >> 24) & 0xff,
-                           src_port,
-                           dst_ip & 0xff, (dst_ip >> 8) & 0xff,
-                           (dst_ip >> 16) & 0xff, (dst_ip >> 24) & 0xff,
-                           dst_port);
-*/
+
                         // Increment counter (total udp packets)
                         tot_udp_packets++;
                         break;
                     case IPPROTO_ICMP:
                         // Intrusion detection (hh only)
                         checkHeavyHitter(pkt_ts, src_ip, pkt_payload_size, hh_thresh);
-
                         fflush(stdout);
 
                         // Increment counter (total icmp packets)
